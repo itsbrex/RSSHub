@@ -1,7 +1,8 @@
-import got from '@/utils/got';
 import { load } from 'cheerio';
+
+import type { Route } from '@/types';
+import got from '@/utils/got';
 import { parseDate } from '@/utils/parse-date';
-import { Route } from '@/types';
 
 export const route: Route = {
     path: '/jdxw',
@@ -45,7 +46,7 @@ async function handler() {
             return {
                 title: item.find('span.listTitle').text().trim(),
                 link: linkUrl,
-                pubDate: parseDate(item.find('span.listDate').text().trim(), 'YYYY-MM-DD'),
+                pubDate: parseDate(item.find('span.listDate').text(), 'YYYY-MM-DD'),
                 description: '',
             };
         });

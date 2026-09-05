@@ -1,7 +1,8 @@
-import got from '@/utils/got';
 import { load } from 'cheerio';
+
+import type { Route } from '@/types';
+import got from '@/utils/got';
 import { parseDate } from '@/utils/parse-date';
-import { Route } from '@/types';
 
 export const route: Route = {
     path: '/iec',
@@ -42,7 +43,7 @@ async function handler() {
             const a = item.find('a');
 
             // 提取日期 [YYYY-MM-DD]
-            const dateText = span.text().trim();
+            const dateText = span.text();
             const dateMatch = dateText.match(/\[(\d{4}-\d{2}-\d{2})\]/);
             const pubDate = dateMatch ? parseDate(dateMatch[1], 'YYYY-MM-DD') : undefined;
 

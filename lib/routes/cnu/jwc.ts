@@ -1,7 +1,8 @@
-import got from '@/utils/got';
 import { load } from 'cheerio';
+
+import type { Route } from '@/types';
+import got from '@/utils/got';
 import { parseDate } from '@/utils/parse-date';
-import { Route } from '@/types';
 
 export const route: Route = {
     path: '/jwc',
@@ -43,15 +44,15 @@ async function handler() {
             const linkUrl = href?.startsWith('http') ? href : `${baseUrl}/tzgg/${href}`;
 
             const dateSpan = item.find('span.date');
-            const day = dateSpan.find('span.day').text().trim();
-            const year = dateSpan.find('span.year').text().trim();
+            const day = dateSpan.find('span.day').text();
+            const year = dateSpan.find('span.year').text();
             const pubDate = year && day ? parseDate(`${year}-${day}`, 'YYYY-MM-DD') : null;
 
             const categoryName = item.find('span.name').text().trim();
             return {
                 title: item.find('span.title').text().trim(),
                 link: linkUrl,
-                pubDate: pubDate || undefined,
+                pubDate,
                 category: categoryName ? [categoryName] : undefined,
                 description: '',
             };
