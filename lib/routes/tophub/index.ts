@@ -1,7 +1,8 @@
-import { Route } from '@/types';
-import ofetch from '@/utils/ofetch';
 import { load } from 'cheerio';
+
 import { config } from '@/config';
+import type { Route } from '@/types';
+import ofetch from '@/utils/ofetch';
 
 export const route: Route = {
     path: '/:id',
@@ -38,7 +39,6 @@ async function handler(ctx) {
     const link = `https://tophub.today/n/${id}`;
     const response = await ofetch(link, {
         headers: {
-            Referer: 'https://tophub.today',
             Cookie: config.tophub?.cookie ?? '',
         },
     });
