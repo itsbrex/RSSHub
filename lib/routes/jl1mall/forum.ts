@@ -1,10 +1,16 @@
-import { type Data, type DataItem, type Route, ViewType } from '@/types';
+import type { Context } from 'hono';
 
+import type { Data, DataItem, Route } from '@/types';
+import { ViewType } from '@/types';
 import ofetch from '@/utils/ofetch';
 import { parseDate } from '@/utils/parse-date';
 import timezone from '@/utils/timezone';
 
-import { type Context } from 'hono';
+type Racer = {
+    mainId?: string;
+    name?: string;
+    nextList?: Racer[];
+};
 
 type MainIdsResult = {
     name: string | undefined;
@@ -12,22 +18,23 @@ type MainIdsResult = {
     racer3: string | undefined;
 };
 
-const findMainIds = (data: readonly any[], searchKey: string): MainIdsResult => {
-    const recurse = (currentList: readonly any[], parentMainId: string | undefined = undefined, grandParentMainId: string | undefined = undefined): MainIdsResult => {
+const findMainIds = (data: readonly Racer[], searchKey: string): MainIdsResult => {
+    const recurse = (currentList: readonly Racer[], parentMainId: string | undefined = undefined, grandParentMainId: string | undefined = undefined): MainIdsResult => {
         for (const item of currentList) {
             const isMatch = item.mainId === searchKey || item.name === searchKey;
 
             if (isMatch) {
                 if (grandParentMainId !== undefined) {
                     return {
-                        name: item.name as string,
+                        name: item.name,
                         racer2: grandParentMainId,
-                        racer3: item.mainId as string,
+                        racer3: item.mainId,
                     };
-                } else if (parentMainId !== undefined) {
+                }
+                if (parentMainId !== undefined) {
                     return {
-                        name: item.name as string,
-                        racer2: item.mainId as string,
+                        name: item.name,
+                        racer2: item.mainId,
                         racer3: undefined,
                     };
                 }
@@ -36,7 +43,7 @@ const findMainIds = (data: readonly any[], searchKey: string): MainIdsResult => 
             const nextList = item.nextList;
 
             if (Array.isArray(nextList) && nextList.length > 0) {
-                const result = recurse(nextList, item.mainId as string | undefined, parentMainId);
+                const result = recurse(nextList, item.mainId, parentMainId);
 
                 return result;
             }
@@ -54,14 +61,14 @@ const findMainIds = (data: readonly any[], searchKey: string): MainIdsResult => 
 
 export const handler = async (ctx: Context): Promise<Data> => {
     const { type = '2', key } = ctx.req.param();
-    const limit: number = Number.parseInt(ctx.req.query('limit') ?? '30', 10);
+    const limit = Number(ctx.req.query('limit') ?? '30');
 
-    const baseUrl: string = 'https://www.jl1mall.com';
+    const baseUrl = 'https://www.jl1mall.com';
     const targetUrl: string = new URL('forum', baseUrl).href;
     const apiUrl: string = new URL(`postApi/${type === 'recommend' ? 'recommend' : 'post'}/getPostData`, baseUrl).href;
     const apiRacerUrl: string = new URL('postApi/racer/getRacerList', baseUrl).href;
 
-    const racerResponse = await ofetch(apiRacerUrl);
+    const racerResponse = await ofetch<{ data: Racer[] }>(apiRacerUrl);
     const racerData = racerResponse.data;
 
     const { name, ...mainIds } = findMainIds(racerData, key);
@@ -92,14 +99,14 @@ export const handler = async (ctx: Context): Promise<Data> => {
                   },
               ]
             : undefined;
-        const guid: string = `jl1mall-${item.postId}`;
+        const guid = `jl1mall-${item.postId}`;
         const image: string | undefined = item.pictureLink;
         const updated: number | string = pubDate;
 
         const processedItem: DataItem = {
             title,
             description,
-            pubDate: pubDate ? timezone(parseDate(pubDate), +8) : undefined,
+            pubDate: pubDate ? timezone(parseDate(pubDate), 8) : undefined,
             link: linkUrl,
             category: categories,
             author: authors,
@@ -111,14 +118,14 @@ export const handler = async (ctx: Context): Promise<Data> => {
             },
             image,
             banner: image,
-            updated: updated ? timezone(parseDate(updated), +8) : undefined,
+            updated: updated ? timezone(parseDate(updated), 8) : undefined,
             language,
         };
 
         return processedItem;
     });
 
-    const title: string = '星林社区';
+    const title = '星林社区';
 
     return {
         title: name ? `${title} - ${name}` : title,
@@ -626,10 +633,9 @@ export const route: Route = {
             ],
         },
     },
-    description: `:::tip
+    description: `::: tip
 订阅 [星林社区遥感开发者培训班的最新内容](https://www.jl1mall.com/forum/)，此时路由为 [\`/jl1mall/forum/2/\`](https://rsshub.app/jl1mall/forum/2/遥感开发者培训班)。
-:::
-`,
+:::`,
     categories: ['new-media'],
     features: {
         requireConfig: false,
